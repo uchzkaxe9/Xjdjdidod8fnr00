@@ -1,12 +1,28 @@
 # Code by @AzRProjects_assistant_bot
 
-from flask import Flask, request, send_file, jsonify, render_template_string, url_for
+from flask import Flask, request, jsonify, render_template_string, url_for
 from pytube import YouTube
 from moviepy.editor import AudioFileClip
 import os
 import uuid
 
 app = Flask(__name__)
+os.makedirs('static', exist_ok=True)  # Static folder create if not exist
+
+@app.route('/')
+def home():
+    return '''
+        <h2>YouTube Downloader by AzR Projects</h2>
+        <form action="/download" method="get">
+            <input type="text" name="url" placeholder="Enter YouTube URL" size="50" required><br><br>
+            <select name="format">
+                <option value="mp4">MP4 (Video)</option>
+                <option value="mp3">MP3 (Audio)</option>
+            </select><br><br>
+            <button type="submit">Download</button>
+        </form>
+        <p>To get JSON response, add <code>&json=true</code> in URL</p>
+    '''
 
 @app.route('/download', methods=['GET'])
 def download_get():
@@ -40,6 +56,7 @@ def download_get():
             video_stream = yt.streams.filter(progressive=True, file_extension='mp4').order_by('resolution').desc().first()
             final_path = f'static/{file_id}.mp4'
             video_stream.download(filename=final_path)
+
             file_size = os.path.getsize(final_path)
             download_url = url_for('static', filename=f'{file_id}.mp4', _external=True)
 
@@ -59,6 +76,4 @@ def download_get():
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-if __name__ == '__main__':
-    os.makedirs('static', exist_ok=True)
-    app.run(debug=True)
+# Do not use app.run() on Render — Gunicorn will start the server
